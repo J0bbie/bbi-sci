@@ -46,7 +46,7 @@ if __name__ == '__main__':
                 cell_barcode = f'{read_name_parts[2]}_{read_name_parts[3]}_{read_name_parts[4]}'
                 umi = read_name_parts[5]
                 cell_umi_key = (cell_barcode, umi)
-       	        if cell_umi_key not in cell_umis_at_position:
+                if cell_umi_key not in cell_umis_at_position:
                     readsout.write(value)               
                 # Track the UMI and all 1bp mismatches to it
                 cell_umis_at_position.add((cell_barcode, umi))

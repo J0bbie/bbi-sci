@@ -17,7 +17,7 @@ checkNextflowVersion( minMajorVersion, minMinorVersion )
 **   o  works only for Linux systems
 **   o  used to distinguish between CentOS 6 and CentOS 7
 */
-( osName, osDistribution, osRelease ) = getOSInfo()
+//( osName, osDistribution, osRelease ) = getOSInfo()
 
 
 // Parse input parameters
@@ -27,7 +27,7 @@ params.star_file = "$baseDir/bin/star_file.txt"
 params.gene_file = "$baseDir/bin/gene_file.txt"
 params.umi_cutoff = 100
 params.rt_barcode_file="default"
-params.max_cores = 16
+params.max_cores = 100
 params.hash_list = false
 params.max_wells_per_sample = 20
 params.garnett_file = false
@@ -418,8 +418,8 @@ Process: align_reads
 
 *************/
 
-// Cores for alignment set at 8 unless limit is lower
-cores_align = params.max_cores < 8 ? params.max_cores : 8
+// Cores for alignment set at 30 unless limit is lower
+cores_align = params.max_cores < 30 ? params.max_cores : 30
 
 process align_reads {
     cache 'lenient'
@@ -438,7 +438,7 @@ process align_reads {
     set -ueo pipefail
 
     cat ${logfile} > align.log
-    printf "** Start process 'align_reads' for $trimmed_fastq at: \$(date)\n\n" > piece.log
+    printf "** Start process 'align_reads' for $trimmed_fastq at: \$(echo date)\n\n" > piece.log
     printf "    Process versions:
         \$(STAR --version)\n\n" >> piece.log
 
@@ -448,17 +448,7 @@ process align_reads {
             --outFileNamePrefix ./align_out/${name} --outSAMtype BAM Unsorted
             --outSAMmultNmax 1 --outSAMstrandField intronMotif\n
 
-    Reference genome information:
-      \$(grep fastq_url $star_path/../*gsrc/record.out | awk '{\$1=\$2=""; print \$0}')
-        FASTA download date: \$(grep fastq_download_date $star_path/../*gsrc/record.out | awk '{\$1=\$2=""; print \$0}')
-        Non REF sequences removed.
-
-      \$(grep gtf_url $star_path/../*gsrc/record.out | awk '{\$1=\$2=""; print \$0}')
-        GTF download date: \$(grep gtf_download_date $star_path/../*gsrc/record.out | awk '{\$1=\$2=""; print \$0}')
-        \$(grep gtf_include_biotypes $star_path/record.out | awk '{\$1=\$2=""; print \$0}')
-
     Process output:\n" >> piece.log
-
 
     mkdir align_out
     STAR \
@@ -470,7 +460,6 @@ process align_reads {
         --outSAMtype BAM Unsorted \
         --outSAMmultNmax 1 \
         --outSAMstrandField intronMotif
-
 
     cat align_out/*Log.final.out >> piece.log
 
@@ -517,8 +506,8 @@ Process: sort_and_filter
 
 *************/
 
-// Cores for sort and filter set at 10 unless limit is lower
-cores_sf = params.max_cores < 10 ? params.max_cores : 10
+// Cores for sort and filter set at 30 unless limit is lower
+cores_sf = params.max_cores < 30 ? params.max_cores : 30
 
 process sort_and_filter {
     cache 'lenient'
@@ -967,7 +956,7 @@ process merge_assignment {
     umi=`cat $split_umi_count | awk '{ sum += \$1 } END { print sum }'`
     read=`cut -f2 $read_count`
     perc=\$(echo "100.0 * (1 - \$umi/\$read)" | bc -l)
-    printf "%-18s   %10d    %10d    %7.1f\\n" $key \$read \$umi \$perc \
+    printf "%-18s   %10d    %10d    %7.1f\\n" $key \$read \$umi \${perc/./,} \
     >"${key}.duplication_rate_stats.txt"
 
     printf "
@@ -1845,6 +1834,8 @@ process finish_log {
 
 
     printf "***** PIPELINE READ STATS *****: \n\n" >> ${key}_read_metrics.log
+
+    export LC_NUMERIC="en_US.UTF-8"
 
     printf "%20s %20s %20s %20s %20s\n" "Process" "Starting reads" "Ending reads" "% lost" "% of total lost" >> ${key}_read_metrics.log
     printf "========================================================================================================\n" >> ${key}_read_metrics.log
